@@ -47,6 +47,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -146,16 +147,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 putDestination_marker(place.getLatLng());
                 destination_location.setText(place.getName());
                 Toast.makeText(this,"Click or Drag Marker for Precise Location..",Toast.LENGTH_LONG).show();
-//Creating Polyline------------
-                Polyline polyline = googleMap.addPolyline(new PolylineOptions()
-                        .clickable(false)
-                        .add(place.getLatLng(),
-                                new LatLng(location.getLatitude(),location.getLongitude())));
+////Creating Polyline------------
+//                Polyline polyline = googleMap.addPolyline(new PolylineOptions()
+//                        .clickable(false)
+//                        .add(place.getLatLng(),
+//                                new LatLng(location.getLatitude(),location.getLongitude())));
                 setRouteOnMapPart01();
-
-
             }else if (resultCode==RESULT_CANCELED){
                 Log.i(TAG,"RESULT_CANCELED");
+                new fetchRoute(new LatLng(23.249330,77.471209),new LatLng(23.233333,77.434087)).execute();
+                Log.i(TAG,"Background Route INIT");
             }else if(resultCode ==PlaceAutocomplete.RESULT_ERROR){
                 Log.i(TAG,"RESULT_ERROR");
             }
@@ -168,8 +169,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         progressDialog.show();
         new fetchRoute(new LatLng(location.getLatitude(),location.getLongitude()),new LatLng(des_location.getLatitude(),des_location.getLongitude())).execute();
     }
-    public void setRouteOnMapPart02(){
-
+    public void setRouteOnMapPart02(ArrayList<LatLng> turnList){
+        PolylineOptions polylineOptions = new PolylineOptions().clickable(false);
+        for(LatLng l : turnList){
+            polylineOptions.add(l);
+        }
+        Polyline polyline = googleMap.addPolyline(polylineOptions);
     }
 
 
@@ -273,6 +278,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 }
             };
+            Log.i(TAG,"Location Callback Setup Done..");
             Looper looper = Looper.getMainLooper();
             if (ActivityCompat.checkSelfPermission(getBaseContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getBaseContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 return null;
@@ -285,14 +291,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     class fetchRoute extends AsyncTask<Void,Void,Void>{
 
-        LatLng start_latlng;
-        LatLng end_latlng;
+        public LatLng start_latlng;
+        public LatLng end_latlng;
         //String final_base_url = "https://maps.googleapis.com/maps/api/directions/json?origin=23.249330,77.471209&destination=23.233333,77.434087&key=AIzaSyAswMLRUznUObWYUjMmbeWkodZS3vziRAE";
         String base_url_01 = "https://maps.googleapis.com/maps/api/directions/json?origin=";
         String base_url_02 = "&destination=";
         String base_url_03 = "&key=AIzaSyAswMLRUznUObWYUjMmbeWkodZS3vziRAE";
-        String final_base_url =base_url_01+start_latlng.latitude+","+start_latlng.longitude+base_url_02+
-                end_latlng.latitude+","+end_latlng.longitude+base_url_03;
+
         String dataString="";
         ArrayList<LatLng> terminalList;
 
@@ -303,6 +308,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         @Override
         protected Void doInBackground(Void... voids) {
+            String final_base_url =base_url_01+start_latlng.latitude+","+start_latlng.longitude+base_url_02+
+                    end_latlng.latitude+","+end_latlng.longitude+base_url_03;
             terminalList = new ArrayList<LatLng>();
             URL url =null;
             HttpURLConnection conn=null;
@@ -314,16 +321,156 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     dataString=dataString+line;
                     dataString=dataString+"\n";
                 }
-
-                JSONObject jsonObject =new JSONObject(dataString).getJSONObject("routes").getJSONObject("legs").getJSONObject("steps");
-                //JSONArray jsonArray =jsonObject.
-            }catch(Exception e){
+                dataString = "{\n" +
+                        "   \"geocoded_waypoints\" : [\n" +
+                        "      {\n" +
+                        "         \"geocoder_status\" : \"OK\",\n" +
+                        "         \"place_id\" : \"ChIJBbyFiZAJ1jsRpFAfAR6U1Fc\",\n" +
+                        "         \"types\" : [ \"route\" ]\n" +
+                        "      },\n" +
+                        "      {\n" +
+                        "         \"geocoder_status\" : \"OK\",\n" +
+                        "         \"place_id\" : \"ChIJg_WQRJoJ1jsRKkQNE8nMeac\",\n" +
+                        "         \"types\" : [ \"route\" ]\n" +
+                        "      }\n" +
+                        "   ],\n" +
+                        "   \"routes\" : [\n" +
+                        "      {\n" +
+                        "         \"bounds\" : {\n" +
+                        "            \"northeast\" : {\n" +
+                        "               \"lat\" : 21.899992,\n" +
+                        "               \"lng\" : 77.89439899999999\n" +
+                        "            },\n" +
+                        "            \"southwest\" : {\n" +
+                        "               \"lat\" : 21.8983491,\n" +
+                        "               \"lng\" : 77.8919708\n" +
+                        "            }\n" +
+                        "         },\n" +
+                        "         \"copyrights\" : \"Map data ©2019 Google\",\n" +
+                        "         \"legs\" : [\n" +
+                        "            {\n" +
+                        "               \"distance\" : {\n" +
+                        "                  \"text\" : \"0.4 km\",\n" +
+                        "                  \"value\" : 422\n" +
+                        "               },\n" +
+                        "               \"duration\" : {\n" +
+                        "                  \"text\" : \"2 mins\",\n" +
+                        "                  \"value\" : 100\n" +
+                        "               },\n" +
+                        "               \"end_address\" : \"Itarsi Rd, Sadar, Badora, Madhya Pradesh 460001, India\",\n" +
+                        "               \"end_location\" : {\n" +
+                        "                  \"lat\" : 21.899992,\n" +
+                        "                  \"lng\" : 77.8919708\n" +
+                        "               },\n" +
+                        "               \"start_address\" : \"Genda Chowk Sadar Betul, Sadar, Badora, Madhya Pradesh 460001, India\",\n" +
+                        "               \"start_location\" : {\n" +
+                        "                  \"lat\" : 21.8991765,\n" +
+                        "                  \"lng\" : 77.89437029999999\n" +
+                        "               },\n" +
+                        "               \"steps\" : [\n" +
+                        "                  {\n" +
+                        "                     \"distance\" : {\n" +
+                        "                        \"text\" : \"60 m\",\n" +
+                        "                        \"value\" : 60\n" +
+                        "                     },\n" +
+                        "                     \"duration\" : {\n" +
+                        "                        \"text\" : \"1 min\",\n" +
+                        "                        \"value\" : 11\n" +
+                        "                     },\n" +
+                        "                     \"end_location\" : {\n" +
+                        "                        \"lat\" : 21.8986384,\n" +
+                        "                        \"lng\" : 77.8943575\n" +
+                        "                     },\n" +
+                        "                     \"html_instructions\" : \"Head \\u003cb\\u003esouth\\u003c/b\\u003e toward \\u003cb\\u003eGenda Chowk Sadar Betul\\u003c/b\\u003e\",\n" +
+                        "                     \"polyline\" : {\n" +
+                        "                        \"points\" : \"{dtdCyvlzMV@Z@Z?ZA\"\n" +
+                        "                     },\n" +
+                        "                     \"start_location\" : {\n" +
+                        "                        \"lat\" : 21.8991765,\n" +
+                        "                        \"lng\" : 77.89437029999999\n" +
+                        "                     },\n" +
+                        "                     \"travel_mode\" : \"DRIVING\"\n" +
+                        "                  },\n" +
+                        "                  {\n" +
+                        "                     \"distance\" : {\n" +
+                        "                        \"text\" : \"0.2 km\",\n" +
+                        "                        \"value\" : 183\n" +
+                        "                     },\n" +
+                        "                     \"duration\" : {\n" +
+                        "                        \"text\" : \"1 min\",\n" +
+                        "                        \"value\" : 59\n" +
+                        "                     },\n" +
+                        "                     \"end_location\" : {\n" +
+                        "                        \"lat\" : 21.8985773,\n" +
+                        "                        \"lng\" : 77.8928044\n" +
+                        "                     },\n" +
+                        "                     \"html_instructions\" : \"Turn \\u003cb\\u003eright\\u003c/b\\u003e at R S Dental Clinic onto \\u003cb\\u003eGenda Chowk Sadar Betul\\u003c/b\\u003e\\u003cdiv style=\\\"font-size:0.9em\\\"\\u003ePass by Maa Annpurna cycle Store (on the left)\\u003c/div\\u003e\",\n" +
+                        "                     \"maneuver\" : \"turn-right\",\n" +
+                        "                     \"polyline\" : {\n" +
+                        "                        \"points\" : \"oatdCwvlzMJGRz@FVJ^BH@H?Z?TAJAFAHCFERINIHAFEP?JAJ\"\n" +
+                        "                     },\n" +
+                        "                     \"start_location\" : {\n" +
+                        "                        \"lat\" : 21.8986384,\n" +
+                        "                        \"lng\" : 77.8943575\n" +
+                        "                     },\n" +
+                        "                     \"travel_mode\" : \"DRIVING\"\n" +
+                        "                  },\n" +
+                        "                  {\n" +
+                        "                     \"distance\" : {\n" +
+                        "                        \"text\" : \"0.2 km\",\n" +
+                        "                        \"value\" : 179\n" +
+                        "                     },\n" +
+                        "                     \"duration\" : {\n" +
+                        "                        \"text\" : \"1 min\",\n" +
+                        "                        \"value\" : 30\n" +
+                        "                     },\n" +
+                        "                     \"end_location\" : {\n" +
+                        "                        \"lat\" : 21.899992,\n" +
+                        "                        \"lng\" : 77.8919708\n" +
+                        "                     },\n" +
+                        "                     \"html_instructions\" : \"Turn \\u003cb\\u003eright\\u003c/b\\u003e at Verma Medical Agency onto \\u003cb\\u003eItarsi Rd\\u003c/b\\u003e\\u003cdiv style=\\\"font-size:0.9em\\\"\\u003ePass by Shri Krishna Automobiles-Betul (on the left)\\u003c/div\\u003e\\u003cdiv style=\\\"font-size:0.9em\\\"\\u003eDestination will be on the left\\u003c/div\\u003e\",\n" +
+                        "                     \"maneuver\" : \"turn-right\",\n" +
+                        "                     \"polyline\" : {\n" +
+                        "                        \"points\" : \"catdC_mlzMYNoDfB}@`@QJ\"\n" +
+                        "                     },\n" +
+                        "                     \"start_location\" : {\n" +
+                        "                        \"lat\" : 21.8985773,\n" +
+                        "                        \"lng\" : 77.8928044\n" +
+                        "                     },\n" +
+                        "                     \"travel_mode\" : \"DRIVING\"\n" +
+                        "                  }\n" +
+                        "               ],\n" +
+                        "               \"traffic_speed_entry\" : [],\n" +
+                        "               \"via_waypoint\" : []\n" +
+                        "            }\n" +
+                        "         ],\n" +
+                        "         \"overview_polyline\" : {\n" +
+                        "            \"points\" : \"{dtdCyvlzMr@Bv@AJGRz@Rv@DR?p@Id@Ob@KPE\\\\AJYNmFhCQJ\"\n" +
+                        "         },\n" +
+                        "         \"summary\" : \"Genda Chowk Sadar Betul and Itarsi Rd\",\n" +
+                        "         \"warnings\" : [],\n" +
+                        "         \"waypoint_order\" : []\n" +
+                        "      }\n" +
+                        "   ],\n" +
+                        "   \"status\" : \"OK\"\n" +
+                        "}";
+                Log.i(TAG,dataString);
+                JSONObject jsonObject =new JSONObject(dataString);
+                JSONArray jsonArray =jsonObject.getJSONArray("routes").getJSONObject(0).getJSONArray("legs").getJSONObject(0).getJSONArray("steps");
+                for(int i=0;i<jsonArray.length();i++){
+                    JSONObject jsonOBJ_temp =jsonArray.getJSONObject(i).getJSONObject("start_location");
+                    double temp_lat = Double.parseDouble(jsonOBJ_temp.getString("lat"));
+                    double temp_lng = Double.parseDouble(jsonOBJ_temp.getString("lng"));
+                    Log.i(TAG,"place : "+temp_lat+","+temp_lng);
+                    terminalList.add(new LatLng(temp_lat,temp_lng));
+                }
+                terminalList.add(end_latlng);
+                setRouteOnMapPart02(terminalList);
+            }
+            catch(Exception e){
                 Log.i(TAG,"Error : ");
                 e.printStackTrace();
             }
-
-
-
             return null;
         }
     }
